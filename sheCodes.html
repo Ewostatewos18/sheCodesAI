@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>AI Poem Generator</title>
+
+  <!-- CSS Styles -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      background-color: #dddddd;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 2em;
+      color: #333;
+    }
+
+    .header img {
+      width: 150px;
+      margin-top: 20px;
+    }
+
+    .search-container {
+      width: 100%;
+      padding: 20px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(156, 152, 152, 0.1);
+      display: flex; /* Make search container a flex container */
+      justify-content: space-between; /* Distribute space between elements */
+      align-items: center; /* Vertically center align items */
+    }
+
+    .instructions {
+      flex: 1; /* Allow input to take available space */
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-right: 10px; /* Space between input and button */
+      font-size: 1em;
+    }
+
+    .btn {
+      background-color: #2192b4; /* Primary button color */
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    .btn:hover {
+      background-color: #1b7b91; /* Darker shade for hover effect */
+    }
+
+    .poem-container {
+      width: 100%;
+      padding: 30px; /* Increase padding for a more spacious look */
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Increase box shadow */
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .poem {
+      font-size: 1.4em; /* Increase font size for visibility */
+      color: #444; /* Softer text color */
+      white-space: pre-line;
+      line-height: 1.5; /* Add line height for readability */
+      font-style: italic; /* Make poem text italic */
+    }
+
+    .hint {
+      margin-top: 10px;
+      font-size: 0.9em;
+      color: #777;
+    }
+
+    p {
+      font-size: 0.8em;
+      color: #555;
+    }
+
+    a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+
+  <!-- External Script for Axios -->
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://unpkg.com/typewriter-effect@latest/dist/core.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div>
+        <h1>Poem Generator</h1>
+      </div>
+      <img src="https://www.shecodes.io/assets/logos/logo-light-bd0d98ff09a8e2dbf78644d03a4c8b7b5fa9a5ee0b276bdf2f56c07ea425f378.png" alt="SheCodes">
+    </header>
+
+    <!-- Search Container -->
+    <div class="search-container">
+      <form id="poem-generator">
+        <input type="text" id="instructions" autofocus class="instructions" required placeholder="Enter the topic of the poem?" autocomplete="off" />
+        <input type="submit" value="Generate Poem" class="btn" id="submit-button">
+      </form>
+      <div class="hint">i.e: Flower, Paris, or Cheese</div>
+    </div>
+
+    <!-- Poem Container -->
+    <div class="poem-container">
+      <div id="poem" class="poem"></div>
+    </div>
+    <p>
+      Coded by <a href="">Ehitemusie </a>and is <a href="https://www.shecodes.io/" target="_blank">open sourced on Github</a> and is <a href="">hosted on netlify</a>
+    </p>
+  </div>
+
+  <!-- JavaScript Code -->
+  <script>
+    // Selecting the form and poem div elements
+    const form = document.getElementById("poem-generator");
+    const poemDiv = document.getElementById("poem");
+    const submitButton = document.getElementById("submit-button");
+
+    // API Key for SheCodes AI
+    const apiKey = "3t7ce6010b4a8f16bfo4e65cf38caba4"; // Replace with your actual API key
+
+    // Event listener for form submission
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault(); // Prevent the default form submission behavior
+      const topic = document.getElementById("instructions").value.trim(); // Get the input value
+
+      if (topic) {
+        submitButton.disabled = true; // Disable the button to prevent multiple submissions
+        poemDiv.innerHTML = "Generating your poem..."; // Show a loading message
+
+        try {
+          // Fetch a generated poem from the SheCodes API
+          const poem = await generatePoem(topic); // Generate the poem based on the topic
+          displayPoem(poem); // Display the poem with typewriter effect
+        } catch (error) {
+          poemDiv.innerHTML = "Sorry, an error occurred while generating the poem.";
+        } finally {
+          submitButton.disabled = false; // Enable the button again
+        }
+      } else {
+        poemDiv.innerHTML = "Please enter a topic to generate a poem.";
+      }
+    });
+
+    // Function to generate a poem from the SheCodes AI API
+    async function generatePoem(topic) {
+      const context = "Write a short, concise, and meaningful poem in 4 lines."; // Updated context for shorter poem
+      const apiUrl = `https://api.shecodes.io/ai/v1/generate?prompt=${topic}&context=${context}&key=${apiKey}`;
+      
+      // Make the API request and get the response
+      const response = await axios.get(apiUrl);
+      return response.data.answer; // Return the generated poem
+    }
+
+    // Function to display the poem with typewriter effect
+    function displayPoem(poem) {
+      poemDiv.innerHTML = ""; // Clear existing content
+      const typewriter = new Typewriter(poemDiv, {
+        loop: false, // No looping
+        delay: 50,   // Typing speed
+      });
+
+      // Start typing the poem content
+      typewriter.typeString(poem).start();
+    }
+  </script>
+</body>
+</html>
